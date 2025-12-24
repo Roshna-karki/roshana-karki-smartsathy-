@@ -6,11 +6,16 @@ const pool = require('../config/database');
  */
 
 const findByEmail = async (email) => {
-  const result = await pool.query(
-    'SELECT uid AS id, name, email, password, company_name, created_at FROM users WHERE email = $1',
-    [email]
-  );
-  return result.rows[0] || null;
+  try {
+    const result = await pool.query(
+      'SELECT uid AS id, name, email, password, company_name, created_at FROM users WHERE email = $1',
+      [email]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('[UserModel] Error finding user by email:', error);
+    throw error;
+  }
 };
 
 const findById = async (id) => {

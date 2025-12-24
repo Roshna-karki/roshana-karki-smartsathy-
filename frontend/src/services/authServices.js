@@ -71,7 +71,11 @@ const authService = {
     } catch (err) {
       console.error('[authService] login error', err);
       if (err.response?.data) throw err;
-      throw { response: { data: { message: err.message || 'Network error during login' } } };
+      // Handle network errors (Failed to fetch, CORS, etc.)
+      const errorMessage = err.message === 'Failed to fetch' 
+        ? 'Cannot connect to server. Please make sure the backend is running on http://localhost:5000'
+        : err.message || 'Network error during login';
+      throw { response: { data: { message: errorMessage } } };
     }
   },
 

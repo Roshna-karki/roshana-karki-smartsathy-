@@ -55,23 +55,31 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('[Login] Attempting login for email:', email);
 
     // Validation
     if (!email || !password) {
+      console.log('[Login] Missing email or password');
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
     // Find user by email
+    console.log('[Login] Searching for user with email:', email);
     const user = await User.findByEmail(email);
     if (!user) {
+      console.log('[Login] User not found for email:', email);
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+    console.log('[Login] User found:', { id: user.id, email: user.email, name: user.name });
 
     // Verify password
+    console.log('[Login] Verifying password...');
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      console.log('[Login] Password verification failed');
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+    console.log('[Login] Password verified successfully');
 
     // Generate JWT token
     const token = jwt.sign(
@@ -93,7 +101,21 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login' });
+    console.error('Error stack:', error.stack);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    
+    // Check if it's a database connection error
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === '28P01') {
+      return res.status(500).json({ message: 'Database connection failed. Please check your database server.' });
+    }
+    
+    // Check for other database errors
+    if (error.code && error.code.startsWith('2')) {
+      return res.status(500).json({ message: `Database error: ${error.message}` });
+    }
+    
+    res.status(500).json({ message: `Server error during login: ${error.message}` });
   }
 };
 
